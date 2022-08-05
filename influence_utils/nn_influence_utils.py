@@ -25,21 +25,24 @@ def get_loss_with_weight_decay(
         device: torch.device,
         n_gpu: int,
         model: torch.nn.Module,
-        inputs: Dict[str, torch.Tensor],
+        inputs: [torch.Tensor, torch.Tensor], # x, y
         weight_decay: Optional[float],
         weight_decay_ignores: Optional[List[str]]) -> float:
 
     # model.train()
-    for k, v in inputs.items():
-        inputs[k] = v.to(device)
+    #for k, v in inputs.items():
+    #    inputs[k] = v.to(device)
 
-    outputs = model(**inputs)
+    outputs = model(inputs[0])
     # model outputs are always tuple in transformers (see doc)
-    loss = outputs[0]
+    ### ASSUMING MSE LOSS ###
+    
+    loss = torch.nn.functional.mse_loss(outputs, inputs[1])
 
-    if n_gpu > 1:
-        # mean() to average on multi-gpu parallel training
-        loss = loss.mean()
+    ### NOT EXPECTING PARALLEL GPU (YET) ###
+    #if n_gpu > 1:
+    #    # mean() to average on multi-gpu parallel training
+    #    loss = loss.mean()
 
     # In PyTorch, weight-decay loss and gradients are calculated in
     # optimizers rather in nn.Module, so we have to manually specify
@@ -64,7 +67,7 @@ def compute_gradients(
         device: torch.device,
         n_gpu: int,
         model: torch.nn.Module,
-        inputs: Dict[str, torch.Tensor],
+        inputs: [torch.Tensor, torch.Tensor],
         params_filter: Optional[List[str]],
         weight_decay: Optional[float],
         weight_decay_ignores: Optional[List[str]]
@@ -93,7 +96,7 @@ def compute_hessian_vector_products(
         device: torch.device,
         n_gpu: int,
         model: torch.nn.Module,
-        inputs: Dict[str, torch.Tensor],
+        inputs: [torch.Tensor, torch.Tensor],
         vectors: torch.FloatTensor,
         params_filter: Optional[List[str]],
         weight_decay: Optional[float],
@@ -136,7 +139,7 @@ def compute_s_test(
         n_gpu: int,
         device: torch.device,
         model: torch.nn.Module,
-        test_inputs: Dict[str, torch.Tensor],
+        test_inputs: [torch.Tensor, torch.Tensor],
         train_data_loaders: List[torch.utils.data.DataLoader],
         params_filter: Optional[List[str]],
         weight_decay: Optional[float],
@@ -243,7 +246,7 @@ def compute_influences(
         n_gpu: int,
         device: torch.device,
         model: torch.nn.Module,
-        test_inputs: Dict[str, torch.Tensor],
+        test_inputs: [torch.Tensor, torch.Tensor],
         batch_train_data_loader: torch.utils.data.DataLoader,
         instance_train_data_loader: torch.utils.data.DataLoader,
         params_filter: Optional[List[str]] = None,
